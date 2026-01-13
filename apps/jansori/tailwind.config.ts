@@ -9,24 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Neo-Brutalism Orange Theme
-        'nb-orange': '#f97316',
-        'nb-orange-light': '#fdba74',
-        'nb-orange-dark': '#ea580c',
-        'nb-yellow': '#fbbf24',
-        'nb-cream': '#fff7ed',
-        'nb-black': '#000000',
-        'nb-white': '#ffffff',
-      },
-      boxShadow: {
-        // Neo-Brutalism shadows
-        'nb': '4px 4px 0px 0px rgba(0,0,0,1)',
-        'nb-sm': '2px 2px 0px 0px rgba(0,0,0,1)',
-        'nb-lg': '6px 6px 0px 0px rgba(0,0,0,1)',
-        'nb-hover': '6px 6px 0px 0px rgba(0,0,0,1)',
+        // Jansori Hand-drawn Theme
+        primary: '#f97316',      // Orange - 메인 컬러
+        secondary: '#fbbf24',    // Yellow - 보조 컬러
+        background: '#fffbf5',   // Warm cream - 배경
+        surface: '#ffffff',      // White - 카드 배경
+        text: '#1f2937',         // Dark gray - 텍스트
+        muted: '#6b7280',        // Gray - 보조 텍스트
       },
       fontFamily: {
+        // Hand-drawn style fonts
+        hand: ['Schoolbell', 'cursive'],
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        'hand': '255px 15px 225px 15px/15px 225px 15px 255px',
       },
     },
   },

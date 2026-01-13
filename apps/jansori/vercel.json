@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/process-naggings",
+      "schedule": "0 9,12,18,21 * * *"
+    }
+  ]
+}
