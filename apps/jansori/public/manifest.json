@@ -1,0 +1,26 @@
+{
+  "name": "Jansori - 잔소리 AI",
+  "short_name": "Jansori",
+  "description": "따뜻한 잔소리로 당신의 목표를 응원합니다",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fffbf5",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "lang": "ko"
+}
