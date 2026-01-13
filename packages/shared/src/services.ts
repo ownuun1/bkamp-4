@@ -54,7 +54,7 @@ export const services: Service[] = [
     description: '유명 창업가와 AI 대화',
     icon: '👔',
     color: '#6366f1', // indigo
-    ready: false,
+    ready: true,
   },
   {
     id: 'webtoon',
