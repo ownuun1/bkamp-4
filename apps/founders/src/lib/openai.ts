@@ -1,9 +1,9 @@
-import OpenAI from 'openai';
+import Groq from 'groq-sdk';
 
-// Create OpenAI client lazily to avoid build-time errors
-export function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+// Create Groq client lazily to avoid build-time errors
+export function getGroqClient() {
+  return new Groq({
+    apiKey: process.env.GROQ_API_KEY,
   });
 }
 

@@ -1,12 +1,10 @@
-import { getOpenAIClient, PERSONA_PROMPTS } from '@/lib/openai';
+import { getGroqClient, PERSONA_PROMPTS } from '@/lib/openai';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function POST(request: NextRequest) {
   try {
-    const openai = getOpenAIClient();
+    const groq = getGroqClient();
     const { sessionId, message, personaId } = await request.json();
 
     if (!sessionId || !message || !personaId) {
@@ -71,8 +69,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Create streaming response
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       messages,
       stream: true,
       max_tokens: 1000,
