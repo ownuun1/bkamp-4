@@ -62,7 +62,7 @@ export const services: Service[] = [
     description: '취향 맞춤 웹툰 추천',
     icon: '📖',
     color: '#22c55e', // green
-    ready: false,
+    ready: true,
   },
 ];
 
