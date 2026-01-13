@@ -1,13 +1,56 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
-  BriefcaseIcon,
   DocumentPlusIcon,
-  ArrowUpIcon,
   ClockIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+
+// Auto sync jobs on page load (throttled to once per 30 minutes)
+function useAutoSync() {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    const SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutes
+    const lastSyncTime = localStorage.getItem('jobhunt_last_sync');
+    const now = Date.now();
+
+    if (lastSyncTime) {
+      setLastSync(lastSyncTime);
+    }
+
+    // Skip if synced recently
+    if (lastSyncTime && now - parseInt(lastSyncTime) < SYNC_INTERVAL) {
+      return;
+    }
+
+    const runSync = async () => {
+      setIsSyncing(true);
+      try {
+        // Sync jobs from Upwork
+        await fetch('/api/jobs/sync', { method: 'POST' });
+        // Run matching for current user
+        await fetch('/api/jobs/match-all', { method: 'POST' });
+
+        const syncTime = Date.now().toString();
+        localStorage.setItem('jobhunt_last_sync', syncTime);
+        setLastSync(syncTime);
+      } catch (error) {
+        console.error('Auto sync failed:', error);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    runSync();
+  }, []);
+
+  return { isSyncing, lastSync };
+}
 
 // Mock data for demo
 const mockJobs = [
@@ -61,15 +104,24 @@ function FitScoreBadge({ score }: { score: number }) {
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
   const tj = useTranslations('jobs');
+  const { isSyncing } = useAutoSync();
 
   const hasResume = false; // TODO: Check from user profile
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="text-gray-600 mt-1">{t('subtitle')}</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600 mt-1">{t('subtitle')}</p>
+        </div>
+        {isSyncing && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <ArrowPathIcon className="w-4 h-4 animate-spin" />
+            <span>Syncing jobs...</span>
+          </div>
+        )}
       </div>
 
       {/* No Resume Banner */}
