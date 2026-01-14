@@ -146,8 +146,8 @@ export async function GET(request: NextRequest) {
       .from('jobhunt_applications')
       .select(`
         *,
-        job:job_postings(*),
-        resume:resumes(file_name)
+        job:jobhunt_postings(*),
+        resume:jobhunt_resumes(file_name)
       `, { count: 'exact' })
       .eq('user_id', user.id)
       .order('applied_at', { ascending: false })

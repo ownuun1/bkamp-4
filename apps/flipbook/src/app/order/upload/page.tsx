@@ -140,14 +140,16 @@ export default function UploadPage() {
       <div className="flex justify-between mt-8">
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn min-w-24"
+          style={{ border: '1px solid #d1d5db' }}
           onClick={() => router.push('/order')}
         >
           이전
         </button>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn min-w-24"
+          style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: '1px solid #7c3aed' }}
           onClick={handleNext}
           disabled={!orderData.videoFile}
         >

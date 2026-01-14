@@ -7,7 +7,29 @@ import {
   DocumentPlusIcon,
   ClockIcon,
   ArrowPathIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
+
+interface Job {
+  id: string;
+  title: string;
+  platform: string;
+  external_url: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_type: string | null;
+  skills_required: string[] | null;
+  created_at: string;
+  description: string | null;
+}
+
+interface Match {
+  id: string;
+  job_id: string;
+  fit_score: number;
+  status: string;
+  job: Job;
+}
 
 // Auto sync jobs on page load (throttled to once per 30 minutes)
 function useAutoSync() {
@@ -52,39 +74,29 @@ function useAutoSync() {
   return { isSyncing, lastSync };
 }
 
-// Mock data for demo
-const mockJobs = [
-  {
-    id: '1',
-    title: 'Senior React Developer Needed for E-commerce Platform',
-    company: 'TechCorp Inc.',
-    fitScore: 92,
-    budget: '$50-80/hr',
-    skills: ['React', 'TypeScript', 'Node.js'],
-    postedAt: '2 hours ago',
-    platform: 'Upwork',
-  },
-  {
-    id: '2',
-    title: 'Full Stack Developer for SaaS Startup',
-    company: 'StartupXYZ',
-    fitScore: 85,
-    budget: '$40-60/hr',
-    skills: ['Next.js', 'PostgreSQL', 'AWS'],
-    postedAt: '5 hours ago',
-    platform: 'Upwork',
-  },
-  {
-    id: '3',
-    title: 'Frontend Engineer - React/Next.js',
-    company: 'DigitalAgency',
-    fitScore: 78,
-    budget: '$45-70/hr',
-    skills: ['React', 'Next.js', 'Tailwind CSS'],
-    postedAt: '1 day ago',
-    platform: 'Upwork',
-  },
-];
+function formatBudget(min: number | null, max: number | null, type: string | null, fallback: string): string {
+  if (!min && !max) return fallback;
+  if (min && max && min !== max) {
+    return `$${min}-$${max}${type === 'hourly' ? '/hr' : ''}`;
+  }
+  return `$${min || max}${type === 'hourly' ? '/hr' : ''}`;
+}
+
+function formatTimeAgo(
+  dateString: string,
+  translations: { justNow: string; hoursAgo: string; dayAgo: string; daysAgo: string }
+): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) return translations.justNow;
+  if (diffHours < 24) return translations.hoursAgo.replace('{count}', String(diffHours));
+  if (diffDays === 1) return translations.dayAgo;
+  return translations.daysAgo.replace('{count}', String(diffDays));
+}
 
 function FitScoreBadge({ score }: { score: number }) {
   const getColor = () => {
@@ -105,8 +117,64 @@ export default function DashboardPage() {
   const t = useTranslations('dashboard');
   const tj = useTranslations('jobs');
   const { isSyncing } = useAutoSync();
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [hasResume, setHasResume] = useState(false);
 
-  const hasResume = false; // TODO: Check from user profile
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const res = await fetch('/api/jobs/matched?limit=10');
+        if (res.ok) {
+          const data = await res.json();
+          setMatches(data.matches || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch matches:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, [isSyncing]);
+
+  const handleApply = async (jobId: string) => {
+    setApplyingJobId(jobId);
+    setApplyError(null);
+
+    try {
+      const res = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, generateCover: true }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error);
+      }
+
+      setAppliedJobs((prev) => {
+        const next = new Set(prev);
+        next.add(jobId);
+        return next;
+      });
+
+      // Open external URL if available
+      if (data.externalUrl) {
+        window.open(data.externalUrl, '_blank');
+      }
+    } catch (err: any) {
+      setApplyError(err.message);
+    } finally {
+      setApplyingJobId(null);
+    }
+  };
 
   return (
     <div>
@@ -119,7 +187,7 @@ export default function DashboardPage() {
         {isSyncing && (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <ArrowPathIcon className="w-4 h-4 animate-spin" />
-            <span>Syncing jobs...</span>
+            <span>{t('syncing')}</span>
           </div>
         )}
       </div>
@@ -134,7 +202,7 @@ export default function DashboardPage() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900">{t('noMatches')}</h3>
               <p className="text-gray-600 mt-1 text-sm">
-                Upload your resume to start receiving personalized job matches.
+                {t('noMatchesDesc')}
               </p>
               <Link href="/profile/resume" className="btn-primary mt-4 inline-flex">
                 {t('uploadResume')}
@@ -144,41 +212,50 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 mb-6">
-        {['all', 'new', 'saved', 'applied'].map((filter) => (
-          <button
-            key={filter}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'all'
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {t(`filters.${filter}`)}
-          </button>
-        ))}
-      </div>
+      {applyError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-600 mb-4">
+          {applyError}
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-12">
+          <ArrowPathIcon className="w-8 h-8 animate-spin text-gray-400 mx-auto" />
+          <p className="text-gray-500 mt-2">{t('loading')}</p>
+        </div>
+      )}
+
+      {/* No Jobs */}
+      {!loading && matches.length === 0 && (
+        <div className="text-center py-12 card">
+          <p className="text-gray-500">{t('noJobsYet')}</p>
+        </div>
+      )}
 
       {/* Job Cards */}
       <div className="space-y-4">
-        {mockJobs.map((job) => (
-          <div key={job.id} className="card p-6 hover:shadow-md transition-shadow">
+        {matches.map((match) => (
+          <div key={match.id} className="card p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="badge-primary">{job.platform}</span>
+                  <span className="badge-primary">{match.job.platform}</span>
                   <span className="flex items-center text-gray-400 text-sm">
                     <ClockIcon className="w-4 h-4 mr-1" />
-                    {job.postedAt}
+                    {formatTimeAgo(match.job.created_at, {
+                      justNow: t('justNow'),
+                      hoursAgo: t('hoursAgo'),
+                      dayAgo: t('dayAgo'),
+                      daysAgo: t('daysAgo'),
+                    })}
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 cursor-pointer">
-                  {job.title}
+                  {match.job.title}
                 </h3>
-                <p className="text-gray-600 text-sm mt-1">{job.company}</p>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {job.skills.map((skill) => (
+                  {match.job.skills_required?.slice(0, 5).map((skill) => (
                     <span key={skill} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md">
                       {skill}
                     </span>
@@ -188,22 +265,35 @@ export default function DashboardPage() {
               <div className="text-right flex-shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm text-gray-500">{tj('fitScore')}</span>
-                  <FitScoreBadge score={job.fitScore} />
+                  <FitScoreBadge score={match.fit_score} />
                 </div>
-                <p className="text-lg font-semibold text-gray-900">{job.budget}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatBudget(match.job.salary_min, match.job.salary_max, match.job.salary_type, t('budgetNotSpecified'))}
+                </p>
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <button className="btn-ghost text-sm">
+              <button
+                onClick={() => match.job.external_url && window.open(match.job.external_url, '_blank')}
+                className="btn-ghost text-sm"
+              >
                 {tj('viewDetails')}
               </button>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary text-sm">
-                  {tj('save')}
-                </button>
-                <button className="btn-primary text-sm">
-                  {tj('apply')}
-                </button>
+                {appliedJobs.has(match.job_id) || match.status === 'applied' ? (
+                  <button className="btn-primary text-sm bg-green-600 hover:bg-green-700 flex items-center gap-1" disabled>
+                    <CheckIcon className="w-4 h-4" />
+                    {t('applied')}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleApply(match.job_id)}
+                    disabled={applyingJobId === match.job_id}
+                    className="btn-primary text-sm"
+                  >
+                    {applyingJobId === match.job_id ? t('applying') : tj('apply')}
+                  </button>
+                )}
               </div>
             </div>
           </div>

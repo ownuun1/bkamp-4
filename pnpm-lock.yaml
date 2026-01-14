@@ -66,6 +66,9 @@ importers:
       '@bkamp/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase
+      '@supabase/supabase-js':
+        specifier: ^2.45.0
+        version: 2.90.1
       daisyui:
         specifier: ^5.5.14
         version: 5.5.14
@@ -435,12 +438,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.0
         version: 2.90.1
+      groq-sdk:
+        specifier: ^0.37.0
+        version: 0.37.0
       next:
         specifier: ^14.2.0
         version: 14.2.35(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      openai:
-        specifier: ^4.40.0
-        version: 4.104.0(ws@8.19.0)(zod@3.25.76)
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -3707,6 +3710,7 @@ snapshots:
       zod: 3.25.76
     transitivePeerDependencies:
       - encoding
+    optional: true
 
   parseley@0.12.1:
     dependencies:

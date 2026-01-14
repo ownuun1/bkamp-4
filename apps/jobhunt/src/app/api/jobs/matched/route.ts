@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       .from('jobhunt_matches')
       .select(`
         *,
-        job:job_postings(*)
+        job:jobhunt_postings(*)
       `, { count: 'exact' })
       .eq('user_id', user.id)
       .gte('fit_score', minScore)
