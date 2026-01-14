@@ -1,84 +1,114 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ClockIcon,
+  CheckIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
-const mockJobs = [
-  {
-    id: '1',
-    title: 'Senior React Developer Needed for E-commerce Platform',
-    company: 'TechCorp Inc.',
-    fitScore: 92,
-    budget: '$50-80/hr',
-    skills: ['React', 'TypeScript', 'Node.js'],
-    postedAt: '2 hours ago',
-    platform: 'Upwork',
-    description: 'We are looking for an experienced React developer to help build our e-commerce platform...',
-  },
-  {
-    id: '2',
-    title: 'Full Stack Developer for SaaS Startup',
-    company: 'StartupXYZ',
-    fitScore: 85,
-    budget: '$40-60/hr',
-    skills: ['Next.js', 'PostgreSQL', 'AWS'],
-    postedAt: '5 hours ago',
-    platform: 'Upwork',
-    description: 'Join our growing team to build innovative SaaS solutions...',
-  },
-  {
-    id: '3',
-    title: 'Frontend Engineer - React/Next.js',
-    company: 'DigitalAgency',
-    fitScore: 78,
-    budget: '$45-70/hr',
-    skills: ['React', 'Next.js', 'Tailwind CSS'],
-    postedAt: '1 day ago',
-    platform: 'Upwork',
-    description: 'Looking for a skilled frontend engineer to work on client projects...',
-  },
-  {
-    id: '4',
-    title: 'Node.js Backend Developer',
-    company: 'FinTech Solutions',
-    fitScore: 71,
-    budget: '$55-85/hr',
-    skills: ['Node.js', 'Express', 'MongoDB'],
-    postedAt: '2 days ago',
-    platform: 'Upwork',
-    description: 'Backend developer needed for our financial services platform...',
-  },
-];
+interface Job {
+  id: string;
+  title: string;
+  platform: string;
+  external_url: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_type: string | null;
+  skills_required: string[] | null;
+  created_at: string;
+  description: string | null;
+}
 
-function FitScoreBadge({ score }: { score: number }) {
-  const getColor = () => {
-    if (score >= 90) return 'bg-green-100 text-green-800';
-    if (score >= 70) return 'bg-blue-100 text-blue-800';
-    if (score >= 50) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
-  };
+function formatBudget(min: number | null, max: number | null, type: string | null): string {
+  if (!min && !max) return 'Budget not specified';
+  if (min && max && min !== max) {
+    return `$${min}-$${max}${type === 'hourly' ? '/hr' : ''}`;
+  }
+  return `$${min || max}${type === 'hourly' ? '/hr' : ''}`;
+}
 
-  return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold ${getColor()}`}>
-      {score}%
-    </span>
-  );
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffHours < 1) return 'Just now';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
 }
 
 export default function JobsPage() {
   const t = useTranslations('jobs');
   const tc = useTranslations('common');
   const [search, setSearch] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
 
-  const filteredJobs = mockJobs.filter(
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const res = await fetch('/api/jobs?limit=20');
+        if (res.ok) {
+          const data = await res.json();
+          setJobs(data.jobs || []);
+          setTotal(data.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  const handleApply = async (jobId: string) => {
+    setApplyingJobId(jobId);
+
+    try {
+      const res = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, generateCover: true }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '지원에 실패했습니다.');
+      }
+
+      setAppliedJobs((prev) => {
+        const next = new Set(prev);
+        next.add(jobId);
+        return next;
+      });
+
+      if (data.externalUrl) {
+        window.open(data.externalUrl, '_blank');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setApplyingJobId(null);
+    }
+  };
+
+  const filteredJobs = jobs.filter(
     (job) =>
       job.title.toLowerCase().includes(search.toLowerCase()) ||
-      job.skills.some((skill) => skill.toLowerCase().includes(search.toLowerCase()))
+      job.skills_required?.some((skill) => skill.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -108,8 +138,23 @@ export default function JobsPage() {
 
       {/* Results Count */}
       <p className="text-sm text-gray-500 mb-4">
-        {filteredJobs.length} jobs found
+        {filteredJobs.length} jobs found (Total: {total})
       </p>
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-12">
+          <ArrowPathIcon className="w-8 h-8 animate-spin text-gray-400 mx-auto" />
+          <p className="text-gray-500 mt-2">Loading jobs...</p>
+        </div>
+      )}
+
+      {/* No Jobs */}
+      {!loading && filteredJobs.length === 0 && (
+        <div className="text-center py-12 card">
+          <p className="text-gray-500">No jobs found. Try a different search or check back later.</p>
+        </div>
+      )}
 
       {/* Job List */}
       <div className="space-y-4">
@@ -121,16 +166,17 @@ export default function JobsPage() {
                   <span className="badge-primary">{job.platform}</span>
                   <span className="flex items-center text-gray-400 text-sm">
                     <ClockIcon className="w-4 h-4 mr-1" />
-                    {job.postedAt}
+                    {formatTimeAgo(job.created_at)}
                   </span>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 hover:text-primary-600 cursor-pointer">
                   {job.title}
                 </h3>
-                <p className="text-gray-600 text-sm mt-1">{job.company}</p>
-                <p className="text-gray-500 text-sm mt-2 line-clamp-2">{job.description}</p>
+                {job.description && (
+                  <p className="text-gray-500 text-sm mt-2 line-clamp-2">{job.description}</p>
+                )}
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {job.skills.map((skill) => (
+                  {job.skills_required?.slice(0, 6).map((skill) => (
                     <span key={skill} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md">
                       {skill}
                     </span>
@@ -138,24 +184,33 @@ export default function JobsPage() {
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-gray-500">{t('fitScore')}</span>
-                  <FitScoreBadge score={job.fitScore} />
-                </div>
-                <p className="text-lg font-semibold text-gray-900">{job.budget}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatBudget(job.salary_min, job.salary_max, job.salary_type)}
+                </p>
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <button className="btn-ghost text-sm">
+              <button
+                onClick={() => job.external_url && window.open(job.external_url, '_blank')}
+                className="btn-ghost text-sm"
+              >
                 {t('viewDetails')}
               </button>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary text-sm">
-                  {t('save')}
-                </button>
-                <button className="btn-primary text-sm">
-                  {t('apply')}
-                </button>
+                {appliedJobs.has(job.id) ? (
+                  <button className="btn-primary text-sm bg-green-600 hover:bg-green-700 flex items-center gap-1" disabled>
+                    <CheckIcon className="w-4 h-4" />
+                    지원완료
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleApply(job.id)}
+                    disabled={applyingJobId === job.id}
+                    className="btn-primary text-sm"
+                  >
+                    {applyingJobId === job.id ? '지원 중...' : t('apply')}
+                  </button>
+                )}
               </div>
             </div>
           </div>

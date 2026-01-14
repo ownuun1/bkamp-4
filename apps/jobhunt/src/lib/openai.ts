@@ -195,3 +195,52 @@ Description: ${jobPosting.description}`,
 
   return response.choices[0]?.message?.content || '';
 }
+
+export type JobCategory = 'dev' | 'design' | 'marketing' | 'sales' | 'support' | 'data' | 'writing' | 'other';
+
+export async function classifyJobCategory(
+  title: string,
+  description: string
+): Promise<JobCategory> {
+  const groq = getGroq();
+
+  // Use shorter description to save tokens
+  const shortDesc = description.slice(0, 1000);
+
+  const response = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      {
+        role: 'system',
+        content: `Classify jobs into ONE category. Return ONLY the category code.
+
+Categories:
+- dev (software development, programming, engineering, DevOps, QA)
+- design (UI/UX, graphic design, product design, web design)
+- marketing (SEO, content marketing, growth, social media, ads)
+- sales (sales, business development, account management)
+- support (customer support, customer success, community)
+- data (data science, analytics, ML/AI, data engineering)
+- writing (copywriting, content creation, technical writing, editing)
+- other (everything else)
+
+Return ONLY the category code (e.g., "dev"). No explanation.`,
+      },
+      {
+        role: 'user',
+        content: `Title: ${title}\nDescription: ${shortDesc}`,
+      },
+    ],
+    temperature: 0,
+    max_tokens: 10,
+  });
+
+  const content = response.choices[0]?.message?.content?.trim().toLowerCase() || 'other';
+
+  const validCategories: JobCategory[] = ['dev', 'design', 'marketing', 'sales', 'support', 'data', 'writing', 'other'];
+  if (validCategories.includes(content as JobCategory)) {
+    return content as JobCategory;
+  }
+
+  return 'other';
+}

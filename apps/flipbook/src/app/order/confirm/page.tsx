@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOrder } from '@/context/OrderContext';
 import { createOrder } from '@/lib/actions/order';
+import PaymentSection from '@/components/PaymentSection';
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -146,17 +147,17 @@ export default function ConfirmPage() {
       )}
 
       {/* Price Summary */}
-      <div className="card bg-base-100 shadow-sm mb-6">
+      <div className="card bg-base-100 shadow-sm mb-4">
         <div className="card-body">
           <h2 className="card-title text-lg">결제 금액</h2>
           <div className="text-sm space-y-2">
             <div className="flex justify-between">
-              <span className="opacity-70">플립북 기본가</span>
+              <span className="text-base-content/70">플립북 기본가</span>
               <span>{basePrice.toLocaleString()}원</span>
             </div>
             {orderData.isGift && (
               <div className="flex justify-between">
-                <span className="opacity-70">선물 포장</span>
+                <span className="text-base-content/70">선물 포장</span>
                 <span>{giftPackagePrice.toLocaleString()}원</span>
               </div>
             )}
@@ -166,10 +167,12 @@ export default function ConfirmPage() {
               <span className="text-primary">{totalPrice.toLocaleString()}원</span>
             </div>
           </div>
-          <div className="alert alert-info mt-4">
-            <span className="text-sm">결제는 주문 확인 후 별도 안내드립니다.</span>
-          </div>
         </div>
+      </div>
+
+      {/* Payment Section */}
+      <div className="mb-6">
+        <PaymentSection totalPrice={totalPrice} />
       </div>
 
       {/* Agreement */}
@@ -191,7 +194,8 @@ export default function ConfirmPage() {
       <div className="flex justify-between">
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn min-w-24"
+          style={{ border: '1px solid #d1d5db' }}
           onClick={() => router.push('/order/info')}
           disabled={isSubmitting}
         >
@@ -199,11 +203,23 @@ export default function ConfirmPage() {
         </button>
         <button
           type="button"
-          className={`btn btn-primary ${isSubmitting ? 'loading' : ''}`}
+          className="btn min-w-32"
+          style={{
+            backgroundColor: isSubmitting ? '#9ca3af' : '#7c3aed',
+            color: '#ffffff',
+            border: `1px solid ${isSubmitting ? '#9ca3af' : '#7c3aed'}`,
+          }}
           onClick={handleSubmit}
           disabled={!agreed || isSubmitting}
         >
-          {isSubmitting ? '처리 중...' : '주문하기'}
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              처리 중
+            </span>
+          ) : (
+            '주문하기'
+          )}
         </button>
       </div>
     </div>

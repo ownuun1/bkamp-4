@@ -58,6 +58,23 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const updateOrderData = (data: Partial<OrderData>) => {
     setOrderData((prev) => ({ ...prev, ...data }));
+
+    // 주문번호가 있으면 localStorage에 저장
+    if (data.orderNumber) {
+      try {
+        const savedOrders = JSON.parse(localStorage.getItem('flipbook_orders') || '[]');
+        const newOrder = {
+          orderNumber: data.orderNumber,
+          createdAt: new Date().toISOString(),
+        };
+        // 중복 제거 후 최근 10개만 유지
+        const filtered = savedOrders.filter((o: { orderNumber: string }) => o.orderNumber !== data.orderNumber);
+        const updated = [newOrder, ...filtered].slice(0, 10);
+        localStorage.setItem('flipbook_orders', JSON.stringify(updated));
+      } catch {
+        // localStorage 에러 무시
+      }
+    }
   };
 
   const resetOrderData = () => {

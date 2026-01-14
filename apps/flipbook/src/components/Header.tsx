@@ -38,10 +38,25 @@ export default function Header() {
         </Link>
       </div>
       <div className="navbar-end gap-2">
-        <Link href="/track" className="btn btn-ghost btn-sm">
+        <Link
+          href="/track"
+          className="btn btn-sm"
+          style={{ border: '1px solid #7c3aed', color: '#7c3aed', backgroundColor: '#ffffff' }}
+        >
           주문조회
         </Link>
-        <Link href="/order" className="btn btn-primary btn-sm">
+        <Link
+          href="/admin"
+          className="btn btn-sm"
+          style={{ border: '1px solid #6b7280', color: '#6b7280', backgroundColor: '#ffffff' }}
+        >
+          관리자
+        </Link>
+        <Link
+          href="/order"
+          className="btn btn-sm"
+          style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: '1px solid #7c3aed' }}
+        >
           주문하기
         </Link>
         {!loading && (

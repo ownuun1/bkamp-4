@@ -59,10 +59,18 @@ export default function CompletePage() {
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        <Link href={`/track/${orderData.orderNumber || ''}`} className="btn btn-primary w-full">
+        <Link
+          href={orderData.orderNumber ? `/track/${orderData.orderNumber}` : '/track'}
+          className="btn w-full"
+          style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: '1px solid #7c3aed' }}
+        >
           주문 현황 확인
         </Link>
-        <Link href="/" className="btn btn-ghost w-full">
+        <Link
+          href="/"
+          className="btn w-full"
+          style={{ border: '1px solid #d1d5db' }}
+        >
           홈으로 돌아가기
         </Link>
       </div>

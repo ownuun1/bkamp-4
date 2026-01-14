@@ -3,8 +3,10 @@
 import { createClient } from '@bkamp/supabase/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { POPULAR_WEBTOONS } from '../../data/webtoons';
+import SuggestionModal from '../../components/SuggestionModal';
 
 interface Recommendation {
   title: string;
@@ -31,6 +33,16 @@ export default function DashboardPage() {
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 자동완성 관련 상태
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // 제보 모달 상태
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -47,17 +59,52 @@ export default function DashboardPage() {
     getUser();
   }, [router]);
 
+  // 외부 클릭 시 자동완성 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 입력값 변경 시 자동완성 목록 업데이트
+  useEffect(() => {
+    if (inputValue.trim().length > 0) {
+      const filtered = POPULAR_WEBTOONS.filter(
+        (title) =>
+          title.toLowerCase().includes(inputValue.toLowerCase()) &&
+          !webtoons.includes(title)
+      ).slice(0, 8); // 최대 8개만 표시
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setSelectedIndex(-1);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [inputValue, webtoons]);
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/');
   };
 
-  const addWebtoon = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed && !webtoons.includes(trimmed)) {
-      setWebtoons([...webtoons, trimmed]);
+  const addWebtoon = (title?: string) => {
+    const toAdd = title || inputValue.trim();
+    if (toAdd && !webtoons.includes(toAdd)) {
+      setWebtoons([...webtoons, toAdd]);
       setInputValue('');
+      setShowSuggestions(false);
     }
   };
 
@@ -66,7 +113,26 @@ export default function DashboardPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          addWebtoon(suggestions[selectedIndex]);
+        } else if (inputValue.trim()) {
+          addWebtoon();
+        }
+      } else if (e.key === 'Escape') {
+        setShowSuggestions(false);
+      }
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       addWebtoon();
     }
@@ -169,17 +235,44 @@ export default function DashboardPage() {
             여러 작품을 입력할수록 더 정확한 추천을 받을 수 있어요
           </p>
 
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="웹툰 제목을 입력하세요"
-              className="nb-input flex-1"
-            />
+          <div className="flex gap-2 mb-4 relative">
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                }}
+                placeholder="웹툰 제목을 입력하세요"
+                className="nb-input w-full"
+                autoComplete="off"
+              />
+
+              {/* 자동완성 드롭다운 */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-64 overflow-y-auto"
+                >
+                  {suggestions.map((title, index) => (
+                    <button
+                      key={title}
+                      onClick={() => addWebtoon(title)}
+                      className={`w-full text-left px-4 py-3 hover:bg-nb-green transition-colors border-b border-black/10 last:border-b-0 ${
+                        index === selectedIndex ? 'bg-nb-green' : ''
+                      }`}
+                    >
+                      <span className="font-medium">{title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
-              onClick={addWebtoon}
+              onClick={() => addWebtoon()}
               className="nb-button bg-nb-green whitespace-nowrap"
             >
               추가
@@ -252,6 +345,17 @@ export default function DashboardPage() {
           {error && (
             <p className="mt-4 text-red-600 font-medium text-center">{error}</p>
           )}
+
+          {/* 웹툰 제보 링크 */}
+          <p className="mt-4 text-center text-sm text-black/60">
+            찾는 웹툰이 없나요?{' '}
+            <button
+              onClick={() => setShowSuggestionModal(true)}
+              className="text-nb-green-dark font-medium hover:underline"
+            >
+              웹툰 제보하기
+            </button>
+          </p>
         </section>
 
         {/* Results Section */}
@@ -295,6 +399,18 @@ export default function DashboardPage() {
           </section>
         )}
       </div>
+
+      {/* 제보 모달 */}
+      <SuggestionModal
+        isOpen={showSuggestionModal}
+        onClose={() => setShowSuggestionModal(false)}
+        onSuccess={(title) => {
+          // 제보한 웹툰을 바로 입력에 추가
+          if (!webtoons.includes(title)) {
+            setWebtoons([...webtoons, title]);
+          }
+        }}
+      />
     </main>
   );
 }

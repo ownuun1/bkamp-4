@@ -62,6 +62,16 @@ export default function InfoPage() {
     }
   };
 
+  const inputStyle = {
+    border: '1px solid #d1d5db',
+    backgroundColor: '#ffffff',
+  };
+
+  const inputErrorStyle = {
+    border: '1px solid #ef4444',
+    backgroundColor: '#ffffff',
+  };
+
   return (
     <div>
       {/* Steps */}
@@ -78,55 +88,50 @@ export default function InfoPage() {
         {/* Customer Info */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title text-lg">주문자 정보</h2>
+            <h2 className="card-title text-lg mb-4">주문자 정보</h2>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">이름 *</span>
-              </label>
-              <input
-                type="text"
-                className={`input input-bordered ${errors.customerName ? 'input-error' : ''}`}
-                value={orderData.customerName}
-                onChange={(e) => updateOrderData({ customerName: e.target.value })}
-                placeholder="홍길동"
-              />
-              {errors.customerName && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.customerName}</span>
-                </label>
-              )}
-            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">이름 *</label>
+                <input
+                  type="text"
+                  className="input w-full"
+                  style={errors.customerName ? inputErrorStyle : inputStyle}
+                  value={orderData.customerName}
+                  onChange={(e) => updateOrderData({ customerName: e.target.value })}
+                  placeholder="홍길동"
+                />
+                {errors.customerName && (
+                  <p className="text-error text-sm mt-1">{errors.customerName}</p>
+                )}
+              </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">연락처 *</span>
-              </label>
-              <input
-                type="tel"
-                className={`input input-bordered ${errors.customerPhone ? 'input-error' : ''}`}
-                value={orderData.customerPhone}
-                onChange={(e) => updateOrderData({ customerPhone: e.target.value })}
-                placeholder="010-1234-5678"
-              />
-              {errors.customerPhone && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.customerPhone}</span>
-                </label>
-              )}
-            </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">연락처 *</label>
+                <input
+                  type="tel"
+                  className="input w-full"
+                  style={errors.customerPhone ? inputErrorStyle : inputStyle}
+                  value={orderData.customerPhone}
+                  onChange={(e) => updateOrderData({ customerPhone: e.target.value })}
+                  placeholder="010-1234-5678"
+                />
+                {errors.customerPhone && (
+                  <p className="text-error text-sm mt-1">{errors.customerPhone}</p>
+                )}
+              </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">이메일</span>
-              </label>
-              <input
-                type="email"
-                className="input input-bordered"
-                value={orderData.customerEmail}
-                onChange={(e) => updateOrderData({ customerEmail: e.target.value })}
-                placeholder="email@example.com"
-              />
+              <div>
+                <label className="block text-sm font-medium mb-2">이메일</label>
+                <input
+                  type="email"
+                  className="input w-full"
+                  style={inputStyle}
+                  value={orderData.customerEmail}
+                  onChange={(e) => updateOrderData({ customerEmail: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -134,115 +139,106 @@ export default function InfoPage() {
         {/* Shipping Info */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title text-lg">배송 정보</h2>
+            <h2 className="card-title text-lg mb-4">배송 정보</h2>
 
-            <div className="form-control">
-              <label className="label cursor-pointer justify-start gap-2">
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox"
+                  style={{ border: '2px solid #9ca3af' }}
                   checked={sameAsCustomer}
                   onChange={(e) => handleSameAsCustomerChange(e.target.checked)}
                 />
-                <span className="label-text">주문자 정보와 동일</span>
+                <span className="text-sm">주문자 정보와 동일</span>
               </label>
-            </div>
 
-            {!sameAsCustomer && (
-              <>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">수령인 이름 *</span>
-                  </label>
+              {!sameAsCustomer && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">수령인 이름 *</label>
+                    <input
+                      type="text"
+                      className="input w-full"
+                      style={errors.recipientName ? inputErrorStyle : inputStyle}
+                      value={orderData.recipientName}
+                      onChange={(e) => updateOrderData({ recipientName: e.target.value })}
+                      placeholder="홍길동"
+                    />
+                    {errors.recipientName && (
+                      <p className="text-error text-sm mt-1">{errors.recipientName}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">수령인 연락처 *</label>
+                    <input
+                      type="tel"
+                      className="input w-full"
+                      style={errors.recipientPhone ? inputErrorStyle : inputStyle}
+                      value={orderData.recipientPhone}
+                      onChange={(e) => updateOrderData({ recipientPhone: e.target.value })}
+                      placeholder="010-1234-5678"
+                    />
+                    {errors.recipientPhone && (
+                      <p className="text-error text-sm mt-1">{errors.recipientPhone}</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">우편번호 *</label>
                   <input
                     type="text"
-                    className={`input input-bordered ${errors.recipientName ? 'input-error' : ''}`}
-                    value={orderData.recipientName}
-                    onChange={(e) => updateOrderData({ recipientName: e.target.value })}
-                    placeholder="홍길동"
+                    className="input w-full"
+                    style={errors.addressZipcode ? inputErrorStyle : inputStyle}
+                    value={orderData.addressZipcode}
+                    onChange={(e) => updateOrderData({ addressZipcode: e.target.value })}
+                    placeholder="12345"
                   />
-                  {errors.recipientName && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">{errors.recipientName}</span>
-                    </label>
-                  )}
                 </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">수령인 연락처 *</span>
-                  </label>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-2">주소 *</label>
                   <input
-                    type="tel"
-                    className={`input input-bordered ${errors.recipientPhone ? 'input-error' : ''}`}
-                    value={orderData.recipientPhone}
-                    onChange={(e) => updateOrderData({ recipientPhone: e.target.value })}
-                    placeholder="010-1234-5678"
+                    type="text"
+                    className="input w-full"
+                    style={errors.addressMain ? inputErrorStyle : inputStyle}
+                    value={orderData.addressMain}
+                    onChange={(e) => updateOrderData({ addressMain: e.target.value })}
+                    placeholder="서울시 강남구 테헤란로 123"
                   />
-                  {errors.recipientPhone && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">{errors.recipientPhone}</span>
-                    </label>
-                  )}
                 </div>
-              </>
-            )}
+              </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="form-control col-span-1">
-                <label className="label">
-                  <span className="label-text">우편번호 *</span>
-                </label>
+              <div>
+                <label className="block text-sm font-medium mb-2">상세주소</label>
                 <input
                   type="text"
-                  className={`input input-bordered ${errors.addressZipcode ? 'input-error' : ''}`}
-                  value={orderData.addressZipcode}
-                  onChange={(e) => updateOrderData({ addressZipcode: e.target.value })}
-                  placeholder="12345"
+                  className="input w-full"
+                  style={inputStyle}
+                  value={orderData.addressDetail}
+                  onChange={(e) => updateOrderData({ addressDetail: e.target.value })}
+                  placeholder="101동 1001호"
                 />
               </div>
-              <div className="form-control col-span-2">
-                <label className="label">
-                  <span className="label-text">주소 *</span>
-                </label>
-                <input
-                  type="text"
-                  className={`input input-bordered ${errors.addressMain ? 'input-error' : ''}`}
-                  value={orderData.addressMain}
-                  onChange={(e) => updateOrderData({ addressMain: e.target.value })}
-                  placeholder="서울시 강남구 테헤란로 123"
-                />
+
+              <div>
+                <label className="block text-sm font-medium mb-2">배송 메모</label>
+                <select
+                  className="select w-full"
+                  style={inputStyle}
+                  value={orderData.deliveryMemo}
+                  onChange={(e) => updateOrderData({ deliveryMemo: e.target.value })}
+                >
+                  <option value="">배송 메모를 선택해주세요</option>
+                  <option value="문 앞에 놓아주세요">문 앞에 놓아주세요</option>
+                  <option value="경비실에 맡겨주세요">경비실에 맡겨주세요</option>
+                  <option value="배송 전 연락주세요">배송 전 연락주세요</option>
+                  <option value="부재 시 문 앞에 놓아주세요">부재 시 문 앞에 놓아주세요</option>
+                </select>
               </div>
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">상세주소</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered"
-                value={orderData.addressDetail}
-                onChange={(e) => updateOrderData({ addressDetail: e.target.value })}
-                placeholder="101동 1001호"
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">배송 메모</span>
-              </label>
-              <select
-                className="select select-bordered"
-                value={orderData.deliveryMemo}
-                onChange={(e) => updateOrderData({ deliveryMemo: e.target.value })}
-              >
-                <option value="">배송 메모를 선택해주세요</option>
-                <option value="문 앞에 놓아주세요">문 앞에 놓아주세요</option>
-                <option value="경비실에 맡겨주세요">경비실에 맡겨주세요</option>
-                <option value="배송 전 연락주세요">배송 전 연락주세요</option>
-                <option value="부재 시 문 앞에 놓아주세요">부재 시 문 앞에 놓아주세요</option>
-              </select>
             </div>
           </div>
         </div>
@@ -250,34 +246,34 @@ export default function InfoPage() {
         {/* Gift Options */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title text-lg">선물 옵션</h2>
+            <h2 className="card-title text-lg mb-4">선물 옵션</h2>
 
-            <div className="form-control">
-              <label className="label cursor-pointer justify-start gap-2">
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox"
+                  style={{ border: '2px solid #9ca3af' }}
                   checked={orderData.isGift}
                   onChange={(e) => updateOrderData({ isGift: e.target.checked })}
                 />
-                <span className="label-text">선물 포장</span>
+                <span className="text-sm">선물 포장</span>
               </label>
-            </div>
 
-            {orderData.isGift && (
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">메시지 카드 문구</span>
-                </label>
-                <textarea
-                  className="textarea textarea-bordered"
-                  value={orderData.giftMessage}
-                  onChange={(e) => updateOrderData({ giftMessage: e.target.value })}
-                  placeholder="메시지를 입력해주세요 (선택)"
-                  rows={3}
-                />
-              </div>
-            )}
+              {orderData.isGift && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">메시지 카드 문구</label>
+                  <textarea
+                    className="textarea w-full"
+                    style={inputStyle}
+                    value={orderData.giftMessage}
+                    onChange={(e) => updateOrderData({ giftMessage: e.target.value })}
+                    placeholder="메시지를 입력해주세요 (선택)"
+                    rows={3}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </form>
@@ -286,14 +282,16 @@ export default function InfoPage() {
       <div className="flex justify-between mt-8">
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn min-w-24"
+          style={{ border: '1px solid #d1d5db' }}
           onClick={() => router.push('/order/upload')}
         >
           이전
         </button>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn min-w-24"
+          style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: '1px solid #7c3aed' }}
           onClick={handleNext}
         >
           다음

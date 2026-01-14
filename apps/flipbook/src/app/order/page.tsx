@@ -40,7 +40,11 @@ export default function OrderStart() {
         </div>
       </div>
 
-      <Link href="/order/upload" className="btn btn-primary btn-lg w-full">
+      <Link
+        href="/order/upload"
+        className="btn btn-lg w-full"
+        style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: '1px solid #7c3aed' }}
+      >
         시작하기
       </Link>
     </div>
